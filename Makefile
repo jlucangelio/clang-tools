@@ -110,6 +110,7 @@ BUILDDIR := out
 all: make_builddir \
 	emit_build_config \
 	$(BUILDDIR)/loop-convert \
+	$(BUILDDIR)/integer-promotion \
 
 
 .PHONY: emit_build_config
@@ -121,6 +122,10 @@ make_builddir:
 	@test -d $(BUILDDIR) || mkdir $(BUILDDIR)
 
 $(BUILDDIR)/loop-convert: $(SRC_CLANG_DIR)/LoopConvert.cpp
+	$(CXX) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(CLANG_INCLUDES) $^ \
+		$(CLANG_LIBS) $(LLVM_LDFLAGS) -o $@
+
+$(BUILDDIR)/integer-promotion: $(SRC_CLANG_DIR)/IntegerPromotion.cpp
 	$(CXX) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(CLANG_INCLUDES) $^ \
 		$(CLANG_LIBS) $(LLVM_LDFLAGS) -o $@
 
