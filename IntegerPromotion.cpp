@@ -24,17 +24,54 @@ StatementMatcher ComparisonMatcher =
               hasOperatorName("<=")),
         anyOf(hasLHS(implicitCastExpr(hasImplicitDestinationType(isInteger()))
                          .bind("lhsImplicitCastToInt")),
+              hasLHS(hasDescendant(
+                  implicitCastExpr(hasImplicitDestinationType(isInteger()))
+                      .bind("lhsDescendantImplicitCastToInt"))),
               hasRHS(implicitCastExpr(hasImplicitDestinationType(isInteger()))
-                         .bind("rhsImplicitCastToInt"))))
+                         .bind("rhsImplicitCastToInt")),
+              hasRHS(hasDescendant(
+                  implicitCastExpr(hasImplicitDestinationType(isInteger()))
+                      .bind("rhsDescendantImplicitCastToInt")))))
         .bind("binaryComparisonOperator");
 
 class ComparisonPrinter : public MatchFinder::MatchCallback {
  public:
   virtual void run(const MatchFinder::MatchResult& Result) {
-    if (const BinaryOperator* BO =
-            Result.Nodes.getNodeAs<clang::BinaryOperator>(
-                "binaryComparisonOperator"))
-      BO->dump();
+    // const BinaryOperator* BO = Result.Nodes.getNodeAs<clang::BinaryOperator>(
+    //     "binaryComparisonOperator");
+
+    const ImplicitCastExpr* lhs =
+        Result.Nodes.getNodeAs<ImplicitCastExpr>("lhsImplicitCastToInt");
+    const ImplicitCastExpr* lhsD = Result.Nodes.getNodeAs<ImplicitCastExpr>(
+        "lhsDescendantImplicitCastToInt");
+    const ImplicitCastExpr* rhs =
+        Result.Nodes.getNodeAs<ImplicitCastExpr>("rhsImplicitCastToInt");
+    const ImplicitCastExpr* rhsD = Result.Nodes.getNodeAs<ImplicitCastExpr>(
+        "rhsDescendantImplicitCastToInt");
+
+    if (lhs || lhsD) {
+      if (lhs) {
+        processImplicitCast(lhs);
+      } else if (lhsD) {
+        processImplicitCast(lhsD);
+      }
+    }
+    if (rhs || rhsD) {
+      if (rhs) {
+        processImplicitCast(rhs);
+      } else if (rhsD) {
+        processImplicitCast(rhsD);
+      }
+    }
+  }
+
+ private:
+  void processImplicitCast(const ImplicitCastExpr* ice) {
+    clang::CastKind k = ice->getCastKind();
+    if (k == clang::CastKind::CK_IntegralCast) {
+      llvm::outs() << "Node is an integer promotion.\n";
+      ice->dump();
+    }
   }
 };
 
